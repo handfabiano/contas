@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contas a Pagar</title>
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <h1>💰 Contas a Pagar</h1>
+        <div id="mes-seletor">
+            <button onclick="mudarMes(-1)">←</button>
+            <span id="mes-atual"></span>
+            <button onclick="mudarMes(1)">→</button>
+        </div>
+    </header>
+
+    <!-- Dashboard -->
+    <section id="dashboard" class="card">
+        <h2>Resumo do Mês</h2>
+        <div class="dashboard-grid">
+            <div class="stat pendente">
+                <span class="label">Pendente</span>
+                <span class="valor" id="total-pendente">R$ 0,00</span>
+            </div>
+            <div class="stat pago">
+                <span class="label">Pago</span>
+                <span class="valor" id="total-pago">R$ 0,00</span>
+            </div>
+            <div class="stat atrasado">
+                <span class="label">Atrasado</span>
+                <span class="valor" id="total-atrasado">R$ 0,00</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Formulario -->
+    <section class="card">
+        <h2>➕ Nova Conta</h2>
+        <form id="form-conta">
+            <input type="text" id="descricao" placeholder="Descrição" required>
+            <input type="number" id="valor" placeholder="Valor" step="0.01" required>
+            <input type="date" id="data_vencimento" required>
+            <select id="categoria">
+                <option value="">Selecione categoria</option>
+                <option value="moradia">Moradia</option>
+                <option value="utilidades">Utilidades</option>
+                <option value="alimentacao">Alimentação</option>
+                <option value="transporte">Transporte</option>
+                <option value="saude">Saúde</option>
+                <option value="educacao">Educação</option>
+                <option value="lazer">Lazer</option>
+                <option value="outros">Outros</option>
+            </select>
+            <textarea id="observacoes" placeholder="Observações (opcional)"></textarea>
+            <button type="submit">Adicionar Conta</button>
+        </form>
+    </section>
+
+    <!-- Filtros -->
+    <section class="filtros">
+        <button onclick="filtrar('todos')" class="active">Todas</button>
+        <button onclick="filtrar('pendente')">Pendentes</button>
+        <button onclick="filtrar('pago')">Pagas</button>
+        <button onclick="filtrar('atrasado')">Atrasadas</button>
+    </section>
+
+    <!-- Lista de Contas -->
+    <section id="lista-contas">
+        <!-- Dinamico -->
+    </section>
+
+    <script src="app.js"></script>
+</body>
+</html>
