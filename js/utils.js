@@ -6,7 +6,9 @@ function formatarData(data) {
 }
 
 function formatarValor(valor) {
-    return valor.toFixed(2);
+    // Converte para número (MySQL retorna DECIMAL como string)
+    const num = typeof valor === 'string' ? parseFloat(valor) : valor;
+    return num.toFixed(2).replace('.', ',');
 }
 
 function formatarTipoDespesa(tipo) {
