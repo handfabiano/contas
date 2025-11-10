@@ -11,11 +11,10 @@ const pageInits = {
     lancamento: initLancamentos,
     contas: initContas,
     relatorios: initRelatorios,
-    config: initConfig
+    config: () => {} // Sem configuração necessária
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    carregarConfiguracao();
     loadPage('lancamento');
     registerServiceWorker();
 });
@@ -56,44 +55,61 @@ function loadPage(pageName) {
 
 function renderConfigPage() {
     return `
-        <h2>Configurações do Supabase</h2>
-        
+        <h2>Configurações e Informações</h2>
+
         <div id="alertConfig"></div>
-        
+
         <div class="config-section">
-            <h3>Conexão com Banco de Dados</h3>
-            <p>Configure suas credenciais do Supabase abaixo:</p>
-            
-            <div class="form-group">
-                <label for="supabaseUrl">Supabase URL</label>
-                <input type="text" id="supabaseUrl" placeholder="https://supabase.zenithcompete.com">
-            </div>
-
-            <div class="form-group">
-                <label for="supabaseKey">Supabase Anon Key</label>
-                <input type="text" id="supabaseKey" placeholder="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc2MDcyNDYwMCwiZXhwIjo0OTE2Mzk4MjAwLCJyb2xlIjoiYW5vbiJ9.zxgH9t9aSDmd8Ltu6NBiXq_v2bo7tumvr4QwZKzlDYU">
-            </div>
-
-            <button class="btn" onclick="salvarConfig()">Salvar Configurações</button>
-            <button class="btn btn-success" onclick="testarConexao()">Testar Conexão</button>
+            <h3>Status da Conexão</h3>
+            <p>Teste a conexão com o backend PHP/MySQL:</p>
+            <button class="btn btn-success" onclick="testarConexaoAPI()">Testar Conexão API</button>
+            <div id="statusConexao" style="margin-top:15px;"></div>
         </div>
 
         <div class="config-section">
-            <h3>Instruções de Configuração</h3>
+            <h3>Sobre o Sistema</h3>
+            <p><strong>Versão:</strong> 2.0.0 (MySQL + Mobile-First)</p>
+            <p><strong>Backend:</strong> PHP + MySQL</p>
+            <p><strong>Frontend:</strong> PWA (Progressive Web App)</p>
+            <p><strong>Última atualização:</strong> Novembro 2025</p>
+        </div>
+
+        <div class="config-section">
+            <h3>Recursos</h3>
+            <ul style="line-height:2;">
+                <li>✅ Lançamento de contas individuais e recorrentes</li>
+                <li>✅ Filtros avançados por status, tipo e período</li>
+                <li>✅ Relatórios e dashboard financeiro</li>
+                <li>✅ Interface otimizada para mobile (touch-friendly)</li>
+                <li>✅ Funciona offline (PWA com cache)</li>
+            </ul>
+        </div>
+
+        <div class="config-section">
+            <h3>Instruções</h3>
             <ol>
-                <li>Acesse <a href="https://supabase.com" target="_blank">supabase.com</a> e crie uma conta</li>
-                <li>Crie um novo projeto</li>
-                <li>Vá em Settings → API</li>
-                <li>Copie a URL e a anon/public key</li>
-                <li>Cole as credenciais acima e clique em "Salvar Configurações"</li>
-                <li>Clique em "Criar Tabela" para criar a estrutura no banco</li>
+                <li>Configure o banco MySQL executando <code>setup-mysql.sql</code></li>
+                <li>Edite as credenciais em <code>/api/config.php</code></li>
+                <li>Acesse o sistema e comece a usar!</li>
+                <li>Consulte o <code>README.md</code> para mais informações</li>
             </ol>
-            
-            <button class="btn btn-success" onclick="criarTabela()">Criar Tabela no Banco</button>
         </div>
     `;
 }
 
-function initConfig() {
-    // Configurações já são carregadas automaticamente
+async function testarConexaoAPI() {
+    const status = document.getElementById('statusConexao');
+    status.innerHTML = '<p>Testando conexão...</p>';
+
+    try {
+        const result = await api.testarConexao();
+
+        if (result.success) {
+            status.innerHTML = '<div class="alert alert-success">✅ Conexão estabelecida com sucesso!</div>';
+        } else {
+            status.innerHTML = `<div class="alert alert-danger">❌ Erro na conexão: ${result.error}</div>`;
+        }
+    } catch (error) {
+        status.innerHTML = `<div class="alert alert-danger">❌ Erro ao testar: ${error.message}<br><br><small>Verifique se o backend está configurado corretamente.</small></div>`;
+    }
 }

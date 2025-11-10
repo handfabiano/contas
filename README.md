@@ -1,210 +1,216 @@
 # 💰 Sistema Financeiro - Contas a Pagar
 
-Sistema simples e completo para controle de contas a pagar, com suporte a lançamentos individuais e recorrentes, desenvolvido com HTML, CSS, JavaScript e Supabase.
+Sistema PWA (Progressive Web App) para controle de contas a pagar, otimizado para mobile e desktop.
 
-## 🚀 Funcionalidades
+## 🚀 Tecnologias
 
-- ✅ Lançamento individual de contas
-- ✅ Lançamento recorrente (com número de parcelas ou indefinido)
-- ✅ Controle de status (Pendente, Pago, Atrasado)
-- ✅ Edição e exclusão de contas
-- ✅ Filtros por status e tipo de despesa
-- ✅ Relatórios financeiros detalhados
-- ✅ Gráficos de despesas por tipo
-- ✅ Ranking de maiores credores
-- ✅ Interface responsiva e moderna
+- **Frontend**: HTML5, CSS3 (Mobile-First), JavaScript (ES6+)
+- **Backend**: PHP 7.4+ com API REST
+- **Banco de Dados**: MySQL 5.7+
+- **PWA**: Service Worker para cache offline
 
-## 📋 Pré-requisitos
+## ✨ Características
 
-- Conta no Supabase (gratuita)
-- Navegador web moderno
+### Mobile-First
+- ✅ Bottom navigation para fácil acesso mobile
+- ✅ Touch-friendly (áreas de toque mínimas de 44x44px)
+- ✅ Inputs otimizados (sem zoom automático no iOS)
+- ✅ Animações suaves e feedback visual
+- ✅ Responsivo para tablets e desktops
 
-## 🔧 Configuração do Supabase
+### Funcionalidades
+- 📝 Cadastro de contas individuais e recorrentes
+- 📊 Relatórios e dashboard financeiro
+- 🔍 Filtros por status, tipo e mês
+- ✅ Marcar contas como pagas
+- 🗑️ Excluir contas
+- 💾 Cache offline (PWA)
 
-### 1. Criar conta no Supabase
+## 📦 Instalação
 
-Acesse [https://supabase.com](https://supabase.com) e crie uma conta gratuita.
+### 1. Requisitos
+- PHP 7.4 ou superior
+- MySQL 5.7 ou superior
+- Servidor web (Apache/Nginx)
+- Extensões PHP: PDO, pdo_mysql
 
-### 2. Criar um novo projeto
+### 2. Configurar Banco de Dados
 
-1. Clique em "New Project"
-2. Escolha um nome para o projeto
-3. Defina uma senha para o banco de dados
-4. Escolha a região mais próxima
-5. Aguarde a criação do projeto (pode levar alguns minutos)
-
-### 3. Criar a tabela no banco de dados
-
-No painel do Supabase, vá em **SQL Editor** e execute o seguinte código:
-
-```sql
--- Criar tabela de contas a pagar
-CREATE TABLE contas_pagar (
-    id BIGSERIAL PRIMARY KEY,
-    descricao TEXT NOT NULL,
-    valor DECIMAL(10, 2) NOT NULL,
-    credor TEXT NOT NULL,
-    tipo_despesa TEXT NOT NULL,
-    data_vencimento DATE NOT NULL,
-    data_pagamento TIMESTAMP,
-    status TEXT NOT NULL DEFAULT 'pendente',
-    recorrente BOOLEAN DEFAULT FALSE,
-    parcela_atual INTEGER,
-    total_parcelas INTEGER,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Criar índices para melhor performance
-CREATE INDEX idx_contas_status ON contas_pagar(status);
-CREATE INDEX idx_contas_vencimento ON contas_pagar(data_vencimento);
-CREATE INDEX idx_contas_tipo ON contas_pagar(tipo_despesa);
-
--- Habilitar RLS (Row Level Security) - Opcional
-ALTER TABLE contas_pagar ENABLE ROW LEVEL SECURITY;
-
--- Política para permitir todas as operações (para testes)
--- Em produção, configure políticas mais restritivas
-CREATE POLICY "Permitir tudo para todos" ON contas_pagar
-    FOR ALL
-    USING (true)
-    WITH CHECK (true);
+```bash
+# Importar estrutura do banco
+mysql -u root -p < setup-mysql.sql
 ```
 
-### 4. Obter as credenciais
+### 3. Configurar Credenciais
 
-1. No painel do Supabase, vá em **Settings** > **API**
-2. Copie a **Project URL** (algo como: https://xxxxx.supabase.co)
-3. Copie a **anon/public key** (uma chave longa)
+Edite o arquivo `/api/config.php`:
 
-### 5. Configurar o arquivo app.js
+```php
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'sistema_financeiro');
+define('DB_USER', 'seu_usuario');
+define('DB_PASS', 'sua_senha');
+define('DB_PORT', '3306');
+```
 
-Abra o arquivo `app.js` e substitua as credenciais no início do arquivo:
+### 4. Permissões
+
+```bash
+chmod 755 api/
+chmod 644 api/*.php
+chmod 600 api/config.php  # Somente leitura
+```
+
+## 🔧 Uso
+
+### Acessar o Sistema
+
+```
+http://localhost/contas/
+```
+
+### Instalar como PWA (Mobile)
+
+1. Abra no navegador mobile
+2. Toque em "Adicionar à tela inicial"
+3. O app funcionará offline!
+
+## 🔌 API REST
+
+### Endpoints Disponíveis
+
+#### Contas
+
+```
+GET    /api/contas.php              - Lista contas (com filtros)
+GET    /api/contas.php?id=X         - Busca conta por ID
+POST   /api/contas.php              - Cria nova conta
+PUT    /api/contas.php?id=X         - Atualiza conta
+DELETE /api/contas.php?id=X         - Exclui conta
+PATCH  /api/contas.php?id=X&pagar=1 - Marca como pago
+```
+
+#### Relatórios
+
+```
+GET /api/relatorios.php?tipo=resumo       - Resumo geral
+GET /api/relatorios.php?tipo=dashboard    - Dashboard
+```
+
+### Exemplos de Uso
+
+**Criar Conta**
 
 ```javascript
-const SUPABASE_URL = 'SUA_URL_DO_SUPABASE'; // Cole aqui a Project URL
-const SUPABASE_ANON_KEY = 'SUA_CHAVE_ANONIMA_DO_SUPABASE'; // Cole aqui a anon key
+fetch('/api/contas.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        descricao: 'Aluguel',
+        valor: 1500.00,
+        credor: 'Imobiliária XYZ',
+        tipo_despesa: 'moradia',
+        data_vencimento: '2025-11-05',
+        status: 'pendente'
+    })
+});
 ```
 
-## 📂 Estrutura do Projeto
+## 🗂️ Estrutura de Pastas
 
 ```
-sistema-financeiro/
-│
-├── index.html          # Estrutura HTML do sistema
-├── styles.css          # Estilos e design
-├── app.js              # Lógica JavaScript e integração Supabase
-└── README.md           # Este arquivo
+contas/
+├── api/                      # Backend PHP
+│   ├── config.php            # Configuração
+│   ├── Database.php          # Conexão
+│   ├── Response.php          # Respostas
+│   ├── contas.php            # CRUD
+│   └── relatorios.php        # Relatórios
+├── css/
+│   └── styles.css            # CSS mobile-first
+├── js/
+│   ├── api-client.js         # Cliente da API
+│   ├── app.js                # App principal
+│   ├── contas.js             # Módulo contas
+│   ├── lancamentos.js        # Módulo lançamentos
+│   ├── relatorios-simple.js  # Módulo relatórios
+│   └── utils.js              # Funções auxiliares
+├── index.html
+├── manifest.json
+├── service-worker.js
+├── setup-mysql.sql
+└── README.md
 ```
 
-## 🎯 Como Usar
+## 🐛 Troubleshooting
 
-### 1. Abrir o Sistema
+### Erro: "Conexão recusada"
 
-Abra o arquivo `index.html` em seu navegador.
+```bash
+# Verifique se o MySQL está rodando
+sudo systemctl status mysql
 
-### 2. Novo Lançamento
+# Verifique as credenciais em api/config.php
+```
 
-**Lançamento Individual:**
-1. Selecione "Individual" no tipo de lançamento
-2. Preencha os campos: descrição, valor, credor, tipo de despesa e data de vencimento
-3. Clique em "Salvar Lançamento"
+### Erro 404 na API
 
-**Lançamento Recorrente:**
-1. Selecione "Recorrente" no tipo de lançamento
-2. Escolha entre:
-   - **Número de Parcelas**: Define quantas vezes a conta se repetirá
-   - **Indefinido**: Cria lançamentos sem prazo determinado (até 120 meses)
-3. Selecione a frequência (Mensal, Semanal, Quinzenal ou Anual)
-4. Preencha os demais campos
-5. Clique em "Salvar Lançamento"
+```bash
+# Apache: Habilite mod_rewrite
+sudo a2enmod rewrite
+sudo systemctl restart apache2
+```
 
-### 3. Gerenciar Contas
+### Cache não funciona
 
-Na aba "Contas a Pagar":
-- Visualize todas as contas cadastradas
-- Filtre por status (Pendente, Pago, Atrasado)
-- Filtre por tipo de despesa
-- Marque contas como pagas
-- Edite informações das contas
-- Exclua contas
-
-### 4. Relatórios
-
-Na aba "Relatórios":
-- Defina o período desejado
-- Clique em "Gerar Relatório"
-- Visualize:
-  - Total de despesas
-  - Contas pagas
-  - Contas pendentes
-  - Contas atrasadas
-  - Despesas por tipo (com percentuais)
-  - Maiores credores
-
-## 📊 Tipos de Despesa Disponíveis
-
-- Alimentação
-- Moradia
-- Transporte
-- Saúde
-- Educação
-- Lazer
-- Vestuário
-- Serviços
-- Impostos
-- Outros
-
-## 🎨 Recursos de Design
-
-- Interface moderna e limpa
-- Cores suaves e agradáveis
-- Responsivo para dispositivos móveis
-- Animações e transições suaves
-- Feedback visual para ações do usuário
+```bash
+# Limpe o cache do navegador
+# Force refresh: Ctrl+Shift+R (Windows) ou Cmd+Shift+R (Mac)
+```
 
 ## 🔒 Segurança
 
-Para ambientes de produção, recomenda-se:
-1. Configurar políticas RLS (Row Level Security) mais restritivas no Supabase
-2. Implementar autenticação de usuários
-3. Limitar permissões de acesso aos dados
-4. Usar variáveis de ambiente para as credenciais
+### Produção
 
-## 🐛 Solução de Problemas
+1. **Desative DEBUG_MODE**
+   ```php
+   define('DEBUG_MODE', false);
+   ```
 
-**Erro ao carregar contas:**
-- Verifique se as credenciais do Supabase estão corretas
-- Confirme se a tabela foi criada corretamente
-- Verifique o console do navegador para mais detalhes
+2. **Use HTTPS**
+   ```bash
+   sudo certbot --apache
+   ```
 
-**Lançamentos não aparecem:**
-- Verifique se há conexão com a internet
-- Confirme se as políticas RLS estão configuradas corretamente
-- Tente recarregar a página
+3. **Proteja config.php**
+   ```bash
+   chmod 600 api/config.php
+   ```
 
-## 🚀 Melhorias Futuras
+4. **Configure CORS**
+   ```php
+   define('ALLOWED_ORIGINS', 'https://seudominio.com');
+   ```
 
-- [ ] Sistema de categorias personalizadas
+## 📈 Melhorias Futuras
+
+- [ ] Autenticação de usuários (JWT)
+- [ ] Multi-tenancy (múltiplos usuários)
+- [ ] Exportação para PDF/Excel
 - [ ] Gráficos interativos
-- [ ] Exportação de relatórios em PDF/Excel
-- [ ] Notificações de vencimento
-- [ ] Dashboard com indicadores
-- [ ] Integração com contas bancárias
-- [ ] Autenticação de usuários
-- [ ] Aplicativo mobile
+- [ ] Notificações push
+- [ ] Dark mode
+- [ ] Backup automático
 
-## 📝 Licença
+## 📄 Licença
 
-Este projeto é de código aberto e está disponível para uso pessoal e comercial.
+Este projeto está sob a licença MIT.
 
-## 🤝 Contribuições
+## 👨‍💻 Autor
 
-Contribuições são bem-vindas! Sinta-se à vontade para melhorar o código e adicionar novas funcionalidades.
-
-## 📧 Suporte
-
-Para dúvidas ou sugestões, abra uma issue no repositório do projeto.
+Desenvolvido com ❤️ para facilitar o controle financeiro pessoal.
 
 ---
 
-Desenvolvido com ❤️ para facilitar o controle financeiro
+**Versão:** 2.0.0 (MySQL + Mobile-First)
+**Última atualização:** Novembro 2025

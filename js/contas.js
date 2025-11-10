@@ -48,42 +48,32 @@ function initContas() {
 }
 
 async function carregarContas() {
-    if (!supabase) return;
-
     const loading = document.getElementById('contasLoading');
     const list = document.getElementById('contasList');
-    
+
     loading.classList.remove('hidden');
     list.innerHTML = '';
 
     try {
-        let query = supabase
-            .from('contas_pagar')
-            .select('*')
-            .order('data_vencimento', { ascending: true });
+        // Prepara filtros
+        const filtros = {};
 
-        const filtroStatus = document.getElementById('filtroStatus').value;
-        const filtroTipo = document.getElementById('filtroTipo').value;
-        const filtroMes = document.getElementById('filtroMes').value;
+        const filtroStatus = document.getElementById('filtroStatus')?.value;
+        const filtroTipo = document.getElementById('filtroTipo')?.value;
+        const filtroMes = document.getElementById('filtroMes')?.value;
 
-        if (filtroStatus) {
-            query = query.eq('status', filtroStatus);
+        if (filtroStatus) filtros.status = filtroStatus;
+        if (filtroTipo) filtros.tipo_despesa = filtroTipo;
+        if (filtroMes) filtros.mes = filtroMes;
+
+        // Busca contas da API
+        const response = await api.listarContas(filtros);
+
+        if (!response.success) {
+            throw new Error(response.message || 'Erro ao carregar contas');
         }
 
-        if (filtroTipo) {
-            query = query.eq('tipo_despesa', filtroTipo);
-        }
-
-        if (filtroMes) {
-            const [ano, mes] = filtroMes.split('-');
-            const dataInicio = `${ano}-${mes}-01`;
-            const dataFim = `${ano}-${mes}-31`;
-            query = query.gte('data_vencimento', dataInicio).lte('data_vencimento', dataFim);
-        }
-
-        const { data: contas, error } = await query;
-
-        if (error) throw error;
+        const contas = response.data.contas || [];
 
         if (contas.length === 0) {
             list.innerHTML = '<p style="text-align:center;color:#666;padding:40px;">Nenhuma conta encontrada.</p>';
@@ -94,7 +84,7 @@ async function carregarContas() {
         }
     } catch (error) {
         console.error('Erro ao carregar contas:', error);
-        list.innerHTML = '<p style="text-align:center;color:red;">Erro ao carregar contas.</p>';
+        list.innerHTML = `<p style="text-align:center;color:red;padding:20px;">Erro ao carregar contas: ${error.message}</p>`;
     } finally {
         loading.classList.add('hidden');
     }
@@ -120,8 +110,8 @@ function renderizarConta(conta) {
             </div>
             ${conta.observacoes ? `<div class="conta-info-item" style="margin-top:10px;"><strong>Obs:</strong> ${conta.observacoes}</div>` : ''}
             <div class="conta-actions">
-                ${conta.status !== 'pago' ? `<button class="btn btn-success" onclick="marcarComoPago('${conta.id}')">Marcar como Pago</button>` : ''}
-                <button class="btn btn-danger" onclick="excluirConta('${conta.id}')">Excluir</button>
+                ${conta.status !== 'pago' ? `<button class="btn btn-success" onclick="marcarComoPago(${conta.id})">Marcar como Pago</button>` : ''}
+                <button class="btn btn-danger" onclick="excluirConta(${conta.id})">Excluir</button>
             </div>
         </div>
     `;
@@ -131,12 +121,11 @@ async function marcarComoPago(id) {
     if (!confirm('Deseja marcar esta conta como paga?')) return;
 
     try {
-        const { error } = await supabase
-            .from('contas_pagar')
-            .update({ status: 'pago' })
-            .eq('id', id);
+        const response = await api.marcarComoPago(id);
 
-        if (error) throw error;
+        if (!response.success) {
+            throw new Error(response.message || 'Erro ao atualizar status');
+        }
 
         carregarContas();
     } catch (error) {
@@ -148,12 +137,11 @@ async function excluirConta(id) {
     if (!confirm('Deseja realmente excluir esta conta?')) return;
 
     try {
-        const { error } = await supabase
-            .from('contas_pagar')
-            .delete()
-            .eq('id', id);
+        const response = await api.excluirConta(id);
 
-        if (error) throw error;
+        if (!response.success) {
+            throw new Error(response.message || 'Erro ao excluir conta');
+        }
 
         carregarContas();
     } catch (error) {

@@ -1,0 +1,33 @@
+# Configurações sensíveis
+api/config.php
+
+# Logs
+*.log
+error_log
+
+# Cache
+*.cache
+cache/
+
+# Temporários
+*.tmp
+*.temp
+tmp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node modules (se usar no futuro)
+node_modules/
+package-lock.json
+
+# Vendor (se usar Composer)
+vendor/
