@@ -1,9 +1,8 @@
 /**
  * Sistema de Contas a Pagar
- * JavaScript puro - sem dependencias
+ * Com suporte a parcelas e recorrencia
  */
 
-// Config
 const API_URL = 'api.php';
 let mesAtual = new Date();
 let filtroAtual = 'todos';
@@ -14,12 +13,25 @@ document.addEventListener('DOMContentLoaded', () => {
     carregarDashboard();
     carregarContas();
 
-    // Form submit
     document.getElementById('form-conta').addEventListener('submit', (e) => {
         e.preventDefault();
         criarConta();
     });
 });
+
+// Mudar tipo de lancamento
+function mudarTipoLancamento(tipo) {
+    // Atualizar campo hidden
+    document.getElementById('tipo_lancamento').value = tipo;
+
+    // Atualizar botoes
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // Mostrar/ocultar campos
+    document.getElementById('campos-parcelado').style.display = tipo === 'parcelado' ? 'block' : 'none';
+    document.getElementById('campos-recorrente').style.display = tipo === 'recorrente' ? 'block' : 'none';
+}
 
 // Formatar moeda
 function formatarMoeda(valor) {
@@ -36,7 +48,7 @@ function formatarData(data) {
 
 // Atualizar display do mes
 function atualizarMesDisplay() {
-    const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    const meses = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     document.getElementById('mes-atual').textContent =
         `${meses[mesAtual.getMonth()]} ${mesAtual.getFullYear()}`;
@@ -107,34 +119,53 @@ function renderizarContas(contas) {
         return;
     }
 
-    lista.innerHTML = contas.map(conta => `
+    lista.innerHTML = contas.map(conta => {
+        // Verificar se e parcela
+        let badgeParcela = '';
+        if (conta.parcela_atual && conta.total_parcelas) {
+            badgeParcela = `<span class="badge-parcela">${conta.parcela_atual}/${conta.total_parcelas}</span>`;
+        }
+
+        // Verificar se e recorrente
+        let badgeRecorrente = '';
+        if (conta.tipo_lancamento === 'recorrente' && conta.periodicidade) {
+            badgeRecorrente = `<span class="badge-recorrente">${conta.periodicidade}</span>`;
+        }
+
+        return `
         <div class="conta-card ${conta.status}">
             <div class="conta-header">
-                <h3>${conta.descricao}</h3>
+                <div>
+                    <h3>${conta.descricao}</h3>
+                    <span class="credor">${conta.credor}</span>
+                </div>
                 <span class="valor">${formatarMoeda(conta.valor)}</span>
             </div>
             <div class="conta-info">
-                <span class="categoria">${conta.categoria || 'Sem categoria'}</span>
+                <span class="categoria">${conta.tipo_despesa}</span>
                 <span class="vencimento">Vence: ${formatarData(conta.data_vencimento)}</span>
+            </div>
+            <div class="badges">
+                ${badgeParcela}
+                ${badgeRecorrente}
             </div>
             ${conta.observacoes ? `<p class="observacoes">${conta.observacoes}</p>` : ''}
             <div class="conta-acoes">
                 ${conta.status === 'pendente' ?
                     `<button onclick="marcarPago(${conta.id})">✓ Pagar</button>` : ''}
                 ${conta.status === 'pago' ?
-                    `<span class="data-pagamento">Pago em: ${formatarData(conta.data_pagamento)}</span>` : ''}
-                <button onclick="editarConta(${conta.id})" class="btn-secundario">✏️</button>
+                    `<span class="data-pagamento">Pago</span>` : ''}
                 <button onclick="excluirConta(${conta.id})" class="btn-perigo">🗑️</button>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // Filtrar
 function filtrar(status) {
     filtroAtual = status;
 
-    // Atualizar botoes
     document.querySelectorAll('.filtros button').forEach(btn => {
         btn.classList.remove('active');
     });
@@ -145,36 +176,64 @@ function filtrar(status) {
 
 // Criar conta
 async function criarConta() {
+    const tipo_lancamento = document.getElementById('tipo_lancamento').value;
     const descricao = document.getElementById('descricao').value;
+    const credor = document.getElementById('credor').value;
     const valor = document.getElementById('valor').value;
     const data_vencimento = document.getElementById('data_vencimento').value;
-    const categoria = document.getElementById('categoria').value;
+    const tipo_despesa = document.getElementById('tipo_despesa').value;
     const observacoes = document.getElementById('observacoes').value;
+
+    const payload = {
+        descricao,
+        credor,
+        valor,
+        data_vencimento,
+        tipo_despesa,
+        observacoes,
+        tipo_lancamento
+    };
+
+    // Se for parcelado
+    if (tipo_lancamento === 'parcelado') {
+        const total_parcelas = document.getElementById('total_parcelas').value;
+        if (!total_parcelas || total_parcelas < 2) {
+            alert('Informe o numero de parcelas (minimo 2)');
+            return;
+        }
+        payload.total_parcelas = parseInt(total_parcelas);
+    }
+
+    // Se for recorrente
+    if (tipo_lancamento === 'recorrente') {
+        const periodicidade = document.getElementById('periodicidade').value;
+        const quantidade = document.getElementById('quantidade').value;
+        if (!quantidade || quantidade < 2) {
+            alert('Informe a quantidade de repeticoes (minimo 2)');
+            return;
+        }
+        payload.periodicidade = periodicidade;
+        payload.quantidade = parseInt(quantidade);
+    }
 
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                descricao,
-                valor,
-                data_vencimento,
-                categoria,
-                observacoes
-            })
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json();
 
         if (data.sucesso) {
-            // Limpar form
             document.getElementById('form-conta').reset();
+            document.getElementById('tipo_lancamento').value = 'individual';
+            mudarTipoLancamento('individual');
 
-            // Recarregar
             carregarDashboard();
             carregarContas();
 
-            alert('Conta criada com sucesso!');
+            alert(data.mensagem);
         } else {
             alert('Erro: ' + data.erro);
         }
@@ -192,10 +251,7 @@ async function marcarPago(id) {
         const response = await fetch(`${API_URL}?id=${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                status: 'pago',
-                data_pagamento: new Date().toISOString().split('T')[0]
-            })
+            body: JSON.stringify({ status: 'pago' })
         });
 
         const data = await response.json();
@@ -233,9 +289,4 @@ async function excluirConta(id) {
         console.error('Erro ao excluir conta:', erro);
         alert('Erro ao excluir conta');
     }
-}
-
-// Editar conta (simplificado)
-function editarConta(id) {
-    alert('Função de edição em desenvolvimento. Use excluir e criar novamente por enquanto.');
 }

@@ -20,7 +20,7 @@
 
     <!-- Dashboard -->
     <section id="dashboard" class="card">
-        <h2>Resumo do Mês</h2>
+        <h2>Resumo do Mes</h2>
         <div class="dashboard-grid">
             <div class="stat pendente">
                 <span class="label">Pendente</span>
@@ -41,21 +41,51 @@
     <section class="card">
         <h2>➕ Nova Conta</h2>
         <form id="form-conta">
-            <input type="text" id="descricao" placeholder="Descrição" required>
-            <input type="number" id="valor" placeholder="Valor" step="0.01" required>
+            <!-- Tipo de Lançamento -->
+            <div class="tipo-lancamento-tabs">
+                <button type="button" class="tab-btn active" onclick="mudarTipoLancamento('individual')">Individual</button>
+                <button type="button" class="tab-btn" onclick="mudarTipoLancamento('parcelado')">Parcelado</button>
+                <button type="button" class="tab-btn" onclick="mudarTipoLancamento('recorrente')">Recorrente</button>
+            </div>
+
+            <input type="hidden" id="tipo_lancamento" value="individual">
+
+            <input type="text" id="descricao" placeholder="Descricao" required>
+            <input type="text" id="credor" placeholder="Credor / Fornecedor" required>
+            <input type="number" id="valor" placeholder="Valor Total" step="0.01" required>
             <input type="date" id="data_vencimento" required>
-            <select id="categoria">
-                <option value="">Selecione categoria</option>
+
+            <select id="tipo_despesa" required>
+                <option value="">Selecione a categoria</option>
                 <option value="moradia">Moradia</option>
-                <option value="utilidades">Utilidades</option>
-                <option value="alimentacao">Alimentação</option>
+                <option value="alimentacao">Alimentacao</option>
                 <option value="transporte">Transporte</option>
-                <option value="saude">Saúde</option>
-                <option value="educacao">Educação</option>
+                <option value="saude">Saude</option>
+                <option value="educacao">Educacao</option>
                 <option value="lazer">Lazer</option>
+                <option value="contas">Contas</option>
                 <option value="outros">Outros</option>
             </select>
-            <textarea id="observacoes" placeholder="Observações (opcional)"></textarea>
+
+            <!-- Campos para Parcelado -->
+            <div id="campos-parcelado" style="display:none;">
+                <input type="number" id="total_parcelas" placeholder="Numero de Parcelas" min="2" max="60">
+                <p class="info-text">O valor sera dividido em parcelas mensais iguais</p>
+            </div>
+
+            <!-- Campos para Recorrente -->
+            <div id="campos-recorrente" style="display:none;">
+                <select id="periodicidade">
+                    <option value="semanal">Semanal</option>
+                    <option value="quinzenal">Quinzenal</option>
+                    <option value="mensal" selected>Mensal</option>
+                    <option value="anual">Anual</option>
+                </select>
+                <input type="number" id="quantidade" placeholder="Quantas repeticoes?" min="2" max="60" value="12">
+                <p class="info-text">Serao criadas varias contas com a mesma periodicidade</p>
+            </div>
+
+            <textarea id="observacoes" placeholder="Observacoes (opcional)"></textarea>
             <button type="submit">Adicionar Conta</button>
         </form>
     </section>
