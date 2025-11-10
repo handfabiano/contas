@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar Supabase - Ajuda</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .step {
+            background: #f9f9f9;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+        }
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .step h2 {
+            display: inline;
+            color: #333;
+        }
+        .code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 10px 0;
+        }
+        .alert {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .danger {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        ul {
+            line-height: 1.8;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 5px;
+            font-weight: 600;
+        }
+        .btn:hover {
+            background: #5568d3;
+        }
+        .checklist {
+            background: white;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        .checklist li {
+            list-style: none;
+            padding: 5px 0;
+        }
+        .checklist input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Como Configurar o Supabase</h1>
+        <p>Siga este guia passo a passo para configurar seu banco de dados em 5 minutos!</p>
+
+        <div class="step">
+            <span class="step-number">1</span>
+            <h2>Criar Conta no Supabase</h2>
+            <ul>
+                <li>Acesse: <a href="https://supabase.com" target="_blank">https://supabase.com</a></li>
+                <li>Clique em "Start your project"</li>
+                <li>Faça login com GitHub ou crie conta com email</li>
+            </ul>
+            <a href="https://supabase.com" target="_blank" class="btn">Ir para Supabase</a>
+        </div>
+
+        <div class="step">
+            <span class="step-number">2</span>
+            <h2>Criar Novo Projeto</h2>
+            <ul>
+                <li>Clique no botão "New Project"</li>
+                <li><strong>Nome:</strong> sistema-financeiro (ou outro nome)</li>
+                <li><strong>Senha do Banco:</strong> Crie uma senha forte e ANOTE!</li>
+                <li><strong>Região:</strong> Escolha South America (São Paulo) ou mais próxima</li>
+                <li>Clique em "Create new project"</li>
+                <li>⏱️ Aguarde 2-3 minutos enquanto o projeto é criado</li>
+            </ul>
+            <div class="alert warning">
+                <strong>⚠️ Importante:</strong> Guarde a senha do banco em local seguro!
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">3</span>
+            <h2>Copiar Credenciais</h2>
+            <ul>
+                <li>No dashboard do projeto, clique em ⚙️ <strong>Settings</strong> (canto inferior esquerdo)</li>
+                <li>Clique em <strong>API</strong></li>
+                <li>Você verá duas informações importantes:</li>
+            </ul>
+            <div class="code">
+<strong>Project URL:</strong> https://xxxxxxxxxxxxx.supabase.co
+<strong>anon public:</strong> eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            </div>
+            <div class="alert warning">
+                <strong>⚠️ Copie a "anon public"</strong> - NÃO copie a "service_role"!
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">4</span>
+            <h2>Configurar no Sistema</h2>
+            <ul>
+                <li>Abra o arquivo <strong>index.html</strong> no seu navegador</li>
+                <li>Clique na aba <strong>"Configurações"</strong></li>
+                <li>Cole a <strong>Project URL</strong> no primeiro campo</li>
+                <li>Cole a <strong>anon public</strong> no segundo campo</li>
+                <li>Clique em <strong>"Salvar Configurações"</strong></li>
+                <li>Clique em <strong>"Testar Conexão"</strong></li>
+            </ul>
+            <div class="alert success">
+                ✅ Se aparecer "Conexão realizada com sucesso!", está tudo certo!
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">5</span>
+            <h2>Criar Tabela no Banco</h2>
+            <ul>
+                <li>No Supabase, clique em 🗄️ <strong>SQL Editor</strong> (menu lateral)</li>
+                <li>Clique em <strong>"+ New query"</strong></li>
+                <li>Copie o SQL abaixo e cole no editor:</li>
+            </ul>
+            <div class="code">CREATE TABLE IF NOT EXISTS contas_pagar (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    descricao TEXT NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
+    credor TEXT NOT NULL,
+    tipo_despesa TEXT NOT NULL,
+    data_vencimento DATE NOT NULL,
+    observacoes TEXT,
+    status TEXT DEFAULT 'pendente',
+    tipo_lancamento TEXT DEFAULT 'individual',
+    recorrencia_id UUID,
+    parcela_atual INTEGER,
+    total_parcelas INTEGER,
+    periodicidade TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_contas_pagar_status ON contas_pagar(status);
+CREATE INDEX IF NOT EXISTS idx_contas_pagar_data_vencimento ON contas_pagar(data_vencimento);
+CREATE INDEX IF NOT EXISTS idx_contas_pagar_tipo_despesa ON contas_pagar(tipo_despesa);
+CREATE INDEX IF NOT EXISTS idx_contas_pagar_recorrencia ON contas_pagar(recorrencia_id);
+
+ALTER TABLE contas_pagar ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Permitir acesso total" ON contas_pagar;
+CREATE POLICY "Permitir acesso total" ON contas_pagar 
+    FOR ALL USING (true) WITH CHECK (true);</div>
+            <ul>
+                <li>Clique em <strong>"Run"</strong> ou pressione <strong>Ctrl+Enter</strong></li>
+                <li>Deve aparecer: "Success. No rows returned"</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <span class="step-number">6</span>
+            <h2>Verificar e Testar</h2>
+            <ul>
+                <li>No Supabase, clique em 🗂️ <strong>Table Editor</strong></li>
+                <li>Você deve ver a tabela <strong>"contas_pagar"</strong></li>
+                <li>Volte para o sistema (index.html)</li>
+                <li>Vá na aba <strong>"Novo Lançamento"</strong></li>
+                <li>Crie uma conta de teste</li>
+                <li>Vá na aba <strong>"Minhas Contas"</strong></li>
+                <li>Deve aparecer a conta que você criou!</li>
+            </ul>
+            <div class="alert success">
+                <strong>🎉 Pronto!</strong> Seu sistema está configurado e funcionando!
+            </div>
+        </div>
+
+        <h2>📋 Checklist Rápido</h2>
+        <div class="checklist">
+            <ul>
+                <li><input type="checkbox"> Criar conta no Supabase</li>
+                <li><input type="checkbox"> Criar novo projeto</li>
+                <li><input type="checkbox"> Copiar URL e anon key</li>
+                <li><input type="checkbox"> Configurar no sistema</li>
+                <li><input type="checkbox"> Testar conexão (✅)</li>
+                <li><input type="checkbox"> Executar SQL para criar tabela</li>
+                <li><input type="checkbox"> Verificar tabela criada</li>
+                <li><input type="checkbox"> Criar conta de teste</li>
+                <li><input type="checkbox"> Sistema funcionando!</li>
+            </ul>
+        </div>
+
+        <h2>🆘 Problemas Comuns</h2>
+        
+        <div class="alert danger">
+            <strong>Erro: "relation does not exist"</strong><br>
+            → A tabela não foi criada. Execute o SQL no passo 5.
+        </div>
+
+        <div class="alert danger">
+            <strong>Erro: "Invalid API key"</strong><br>
+            → Verifique se copiou a "anon public" (não a service_role).
+        </div>
+
+        <div class="alert danger">
+            <strong>Erro: "Permission denied"</strong><br>
+            → Execute a parte da POLICY no SQL (últimas linhas).
+        </div>
+
+        <div class="alert warning">
+            <strong>Nada acontece ao salvar</strong><br>
+            → Abra o Console do navegador (F12) e veja se há erros.
+        </div>
+
+        <h2>💡 Dicas Importantes</h2>
+        <ul>
+            <li>✅ O plano gratuito do Supabase é suficiente para uso pessoal</li>
+            <li>✅ Você tem 500 MB de banco de dados grátis</li>
+            <li>✅ Não precisa cadastrar cartão de crédito</li>
+            <li>✅ Guarde suas credenciais em local seguro</li>
+            <li>✅ Faça backup periodicamente (Export CSV no Table Editor)</li>
+            <li>❌ Nunca compartilhe sua service_role key</li>
+        </ul>
+
+        <div class="alert success" style="text-align: center; margin-top: 30px;">
+            <h3>🎊 Tudo Pronto!</h3>
+            <p>Agora você pode usar o sistema para controlar suas contas!</p>
+        </div>
+    </div>
+</body>
+</html>

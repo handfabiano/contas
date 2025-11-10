@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Sistema Financeiro para Controle de Contas a Pagar">
+    <title>Sistema Financeiro</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Sistema Financeiro</h1>
+            <p>Controle de Contas a Pagar</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="openTab('lancamento')">Novo Lançamento</button>
+            <button class="tab" onclick="openTab('contas')">Minhas Contas</button>
+            <button class="tab" onclick="openTab('relatorios')">Relatórios</button>
+            <button class="tab" onclick="openTab('config')">Configurações</button>
+        </div>
+
+        <div id="lancamento" class="tab-content active"></div>
+        <div id="contas" class="tab-content"></div>
+        <div id="relatorios" class="tab-content"></div>
+        <div id="config" class="tab-content"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/lancamentos.js"></script>
+    <script src="js/contas.js"></script>
+    <script src="js/relatorios.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
