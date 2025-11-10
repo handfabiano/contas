@@ -1,0 +1,372 @@
+/**
+ * Sistema de Contas a Pagar
+ * CSS Mobile-First
+ */
+
+/* Reset e Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --cor-primaria: #667eea;
+    --cor-secundaria: #764ba2;
+    --cor-sucesso: #10b981;
+    --cor-atencao: #f59e0b;
+    --cor-perigo: #ef4444;
+    --cor-fundo: #f3f4f6;
+    --cor-fundo-escuro: #1f2937;
+    --cor-texto: #111827;
+    --cor-texto-claro: #6b7280;
+    --border-radius: 12px;
+    --sombra: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--cor-fundo);
+    color: var(--cor-texto);
+    line-height: 1.6;
+    padding-bottom: 20px;
+}
+
+/* Header */
+header {
+    background: linear-gradient(135deg, var(--cor-primaria), var(--cor-secundaria));
+    color: white;
+    padding: 20px;
+    text-align: center;
+    box-shadow: var(--sombra);
+}
+
+header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+}
+
+#mes-seletor {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+#mes-seletor button {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#mes-seletor button:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+#mes-atual {
+    font-size: 1.1rem;
+    font-weight: 600;
+    min-width: 150px;
+}
+
+/* Cards */
+.card {
+    background: white;
+    margin: 20px;
+    padding: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--sombra);
+}
+
+.card h2 {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    color: var(--cor-primaria);
+}
+
+/* Dashboard */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.stat {
+    padding: 20px;
+    border-radius: var(--border-radius);
+    text-align: center;
+}
+
+.stat.pendente { background: #fef3c7; color: #92400e; }
+.stat.pago { background: #d1fae5; color: #065f46; }
+.stat.atrasado { background: #fee2e2; color: #991b1b; }
+
+.stat .label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.stat .valor {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+/* Formulario */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+input,
+select,
+textarea {
+    padding: 12px;
+    font-size: 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-family: inherit;
+    transition: border-color 0.3s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--cor-primaria);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+button[type="submit"] {
+    background: linear-gradient(135deg, var(--cor-primaria), var(--cor-secundaria));
+    color: white;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+button[type="submit"]:active {
+    transform: translateY(0);
+}
+
+/* Filtros */
+.filtros {
+    display: flex;
+    gap: 10px;
+    padding: 20px;
+    overflow-x: auto;
+}
+
+.filtros button {
+    padding: 10px 20px;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s;
+}
+
+.filtros button.active {
+    background: var(--cor-primaria);
+    color: white;
+    border-color: var(--cor-primaria);
+}
+
+/* Lista de Contas */
+#lista-contas {
+    padding: 0 20px;
+}
+
+.conta-card {
+    background: white;
+    margin-bottom: 15px;
+    padding: 20px;
+    border-radius: var(--border-radius);
+    border-left: 4px solid #e5e7eb;
+    box-shadow: var(--sombra);
+}
+
+.conta-card.pendente { border-left-color: var(--cor-atencao); }
+.conta-card.pago { border-left-color: var(--cor-sucesso); }
+.conta-card.atrasado { border-left-color: var(--cor-perigo); }
+
+.conta-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 10px;
+}
+
+.conta-header h3 {
+    font-size: 1.1rem;
+    color: var(--cor-texto);
+    flex: 1;
+}
+
+.conta-header .valor {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--cor-primaria);
+}
+
+.conta-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: var(--cor-texto-claro);
+    margin-bottom: 10px;
+}
+
+.categoria {
+    background: #f3f4f6;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.observacoes {
+    font-size: 0.9rem;
+    color: var(--cor-texto-claro);
+    margin: 10px 0;
+    padding: 10px;
+    background: #f9fafb;
+    border-radius: 6px;
+}
+
+.conta-acoes {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.conta-acoes button {
+    flex: 1;
+    min-width: 44px;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.conta-acoes button:first-child {
+    background: var(--cor-sucesso);
+    color: white;
+    flex: 2;
+}
+
+.conta-acoes button.btn-secundario {
+    background: #f3f4f6;
+    color: var(--cor-texto);
+}
+
+.conta-acoes button.btn-perigo {
+    background: var(--cor-perigo);
+    color: white;
+}
+
+.conta-acoes button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.data-pagamento {
+    font-size: 0.85rem;
+    color: var(--cor-sucesso);
+    font-weight: 600;
+    padding: 8px 12px;
+    background: #d1fae5;
+    border-radius: 8px;
+    flex: 2;
+    text-align: center;
+}
+
+.vazio,
+.erro {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--cor-texto-claro);
+    font-size: 1rem;
+}
+
+.erro {
+    color: var(--cor-perigo);
+}
+
+/* Responsivo - Tablet */
+@media (min-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .card {
+        margin: 20px auto;
+        max-width: 900px;
+    }
+
+    #lista-contas {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .conta-acoes button:first-child {
+        flex: 1;
+    }
+}
+
+/* Responsivo - Desktop */
+@media (min-width: 1024px) {
+    header h1 {
+        font-size: 2rem;
+    }
+
+    #mes-atual {
+        font-size: 1.3rem;
+    }
+
+    .card {
+        max-width: 1200px;
+    }
+
+    #lista-contas {
+        max-width: 1200px;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .conta-card {
+        margin-bottom: 0;
+    }
+}
