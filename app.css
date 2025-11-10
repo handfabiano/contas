@@ -345,6 +345,76 @@ button[type="submit"]:active {
     }
 }
 
+/* Tipo de Lancamento Tabs */
+.tipo-lancamento-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px;
+    background: #f3f4f6;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.tab-btn.active {
+    background: var(--cor-primaria);
+    color: white;
+    border-color: var(--cor-primaria);
+}
+
+.tab-btn:hover {
+    border-color: var(--cor-primaria);
+}
+
+/* Info Text */
+.info-text {
+    font-size: 0.85rem;
+    color: var(--cor-texto-claro);
+    margin-top: 8px;
+    font-style: italic;
+}
+
+/* Credor */
+.credor {
+    font-size: 0.85rem;
+    color: var(--cor-texto-claro);
+    font-weight: 500;
+}
+
+/* Badges */
+.badges {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.badge-parcela,
+.badge-recorrente {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-parcela {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.badge-recorrente {
+    background: #fef3c7;
+    color: #92400e;
+}
+
 /* Responsivo - Desktop */
 @media (min-width: 1024px) {
     header h1 {

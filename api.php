@@ -1,10 +1,9 @@
 <?php
 /**
  * API REST - Sistema de Contas a Pagar
- * Metodos: GET, POST, PUT, DELETE
+ * Tabela: contas_pagar (com parcelas e recorrência)
  */
 
-// Headers CORS
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
@@ -15,13 +14,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Configuracao do banco
+// Configuração
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'u320952164_Conta');
 define('DB_USER', 'u320952164_Conta');
 define('DB_PASS', 'Vieira@2025');
 
-// Conexao
+// Conexão
 try {
     $pdo = new PDO(
         "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
@@ -39,27 +38,31 @@ try {
     exit();
 }
 
-// Pegar metodo e acao
 $method = $_SERVER['REQUEST_METHOD'];
 $acao = $_GET['acao'] ?? 'listar';
 $id = $_GET['id'] ?? null;
 
-// Funcao auxiliar para retornar JSON
 function resposta($data, $code = 200) {
     http_response_code($code);
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit();
 }
 
-// ========== ROTAS ==========
+function gerarUUID() {
+    return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0x0fff) | 0x4000,
+        mt_rand(0, 0x3fff) | 0x8000,
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+    );
+}
 
 try {
     switch ($method) {
 
-        // GET - Listar ou buscar
         case 'GET':
             if ($acao === 'listar') {
-                // Filtros
                 $where = [];
                 $params = [];
 
@@ -68,9 +71,9 @@ try {
                     $params[] = $_GET['status'];
                 }
 
-                if (isset($_GET['categoria'])) {
-                    $where[] = "categoria = ?";
-                    $params[] = $_GET['categoria'];
+                if (isset($_GET['tipo_despesa'])) {
+                    $where[] = "tipo_despesa = ?";
+                    $params[] = $_GET['tipo_despesa'];
                 }
 
                 if (isset($_GET['mes'])) {
@@ -78,7 +81,7 @@ try {
                     $params[] = $_GET['mes'];
                 }
 
-                $sql = "SELECT * FROM contas";
+                $sql = "SELECT * FROM contas_pagar";
                 if (!empty($where)) {
                     $sql .= " WHERE " . implode(" AND ", $where);
                 }
@@ -92,44 +95,42 @@ try {
             }
 
             elseif ($acao === 'dashboard') {
-                // Mes atual
                 $mes = $_GET['mes'] ?? date('Y-m');
 
-                // Totais
+                // Totais por status
                 $stmt = $pdo->prepare("
                     SELECT
                         COUNT(*) as total,
                         SUM(CASE WHEN status = 'pendente' THEN valor ELSE 0 END) as pendente,
                         SUM(CASE WHEN status = 'pago' THEN valor ELSE 0 END) as pago,
                         SUM(CASE WHEN status = 'atrasado' THEN valor ELSE 0 END) as atrasado
-                    FROM contas
+                    FROM contas_pagar
                     WHERE DATE_FORMAT(data_vencimento, '%Y-%m') = ?
                 ");
                 $stmt->execute([$mes]);
                 $dashboard = $stmt->fetch();
 
-                // Por categoria
+                // Por tipo de despesa
                 $stmt = $pdo->prepare("
-                    SELECT categoria, SUM(valor) as total
-                    FROM contas
+                    SELECT tipo_despesa, SUM(valor) as total, COUNT(*) as quantidade
+                    FROM contas_pagar
                     WHERE DATE_FORMAT(data_vencimento, '%Y-%m') = ?
-                    GROUP BY categoria
+                    GROUP BY tipo_despesa
                     ORDER BY total DESC
                 ");
                 $stmt->execute([$mes]);
-                $porCategoria = $stmt->fetchAll();
+                $porTipo = $stmt->fetchAll();
 
                 resposta([
                     'sucesso' => true,
                     'mes' => $mes,
                     'totais' => $dashboard,
-                    'porCategoria' => $porCategoria
+                    'porTipo' => $porTipo
                 ]);
             }
 
             elseif ($id) {
-                // Buscar por ID
-                $stmt = $pdo->prepare("SELECT * FROM contas WHERE id = ?");
+                $stmt = $pdo->prepare("SELECT * FROM contas_pagar WHERE id = ?");
                 $stmt->execute([$id]);
                 $conta = $stmt->fetch();
 
@@ -141,7 +142,6 @@ try {
             }
             break;
 
-        // POST - Criar
         case 'POST':
             $data = json_decode(file_get_contents('php://input'), true);
 
@@ -151,29 +151,128 @@ try {
 
             $descricao = $data['descricao'] ?? null;
             $valor = $data['valor'] ?? null;
+            $credor = $data['credor'] ?? null;
+            $tipo_despesa = $data['tipo_despesa'] ?? 'outros';
             $data_vencimento = $data['data_vencimento'] ?? null;
-            $categoria = $data['categoria'] ?? null;
             $observacoes = $data['observacoes'] ?? null;
+            $tipo_lancamento = $data['tipo_lancamento'] ?? 'individual';
 
-            if (!$descricao || !$valor || !$data_vencimento) {
-                resposta(['erro' => 'Campos obrigatorios: descricao, valor, data_vencimento'], 400);
+            // Validar campos obrigatórios
+            if (!$descricao || !$valor || !$credor || !$data_vencimento) {
+                resposta(['erro' => 'Campos obrigatorios: descricao, valor, credor, data_vencimento'], 400);
             }
 
-            $stmt = $pdo->prepare("
-                INSERT INTO contas (descricao, valor, data_vencimento, categoria, observacoes, status)
-                VALUES (?, ?, ?, ?, ?, 'pendente')
-            ");
+            // PARCELAMENTO
+            if ($tipo_lancamento === 'parcelado') {
+                $total_parcelas = $data['total_parcelas'] ?? 1;
+                $valor_parcela = $valor / $total_parcelas;
+                $recorrencia_id = gerarUUID();
 
-            $stmt->execute([$descricao, $valor, $data_vencimento, $categoria, $observacoes]);
+                $pdo->beginTransaction();
 
-            resposta([
-                'sucesso' => true,
-                'mensagem' => 'Conta criada com sucesso',
-                'id' => $pdo->lastInsertId()
-            ], 201);
+                try {
+                    for ($i = 1; $i <= $total_parcelas; $i++) {
+                        $vencimento_parcela = date('Y-m-d', strtotime($data_vencimento . " +" . ($i - 1) . " months"));
+                        $desc_parcela = $descricao . " - Parcela $i/$total_parcelas";
+
+                        $stmt = $pdo->prepare("
+                            INSERT INTO contas_pagar
+                            (descricao, valor, credor, tipo_despesa, data_vencimento, observacoes, status,
+                             tipo_lancamento, recorrencia_id, parcela_atual, total_parcelas)
+                            VALUES (?, ?, ?, ?, ?, ?, 'pendente', 'recorrente', ?, ?, ?)
+                        ");
+
+                        $stmt->execute([
+                            $desc_parcela, $valor_parcela, $credor, $tipo_despesa,
+                            $vencimento_parcela, $observacoes, $recorrencia_id, $i, $total_parcelas
+                        ]);
+                    }
+
+                    $pdo->commit();
+                    resposta([
+                        'sucesso' => true,
+                        'mensagem' => "$total_parcelas parcelas criadas com sucesso",
+                        'recorrencia_id' => $recorrencia_id
+                    ], 201);
+
+                } catch (Exception $e) {
+                    $pdo->rollBack();
+                    throw $e;
+                }
+            }
+
+            // RECORRÊNCIA
+            elseif ($tipo_lancamento === 'recorrente') {
+                $periodicidade = $data['periodicidade'] ?? 'mensal';
+                $quantidade = $data['quantidade'] ?? 12;
+                $recorrencia_id = gerarUUID();
+
+                $pdo->beginTransaction();
+
+                try {
+                    for ($i = 0; $i < $quantidade; $i++) {
+                        switch ($periodicidade) {
+                            case 'semanal':
+                                $vencimento = date('Y-m-d', strtotime($data_vencimento . " +$i weeks"));
+                                break;
+                            case 'quinzenal':
+                                $dias = $i * 15;
+                                $vencimento = date('Y-m-d', strtotime($data_vencimento . " +$dias days"));
+                                break;
+                            case 'anual':
+                                $vencimento = date('Y-m-d', strtotime($data_vencimento . " +$i years"));
+                                break;
+                            default: // mensal
+                                $vencimento = date('Y-m-d', strtotime($data_vencimento . " +$i months"));
+                        }
+
+                        $stmt = $pdo->prepare("
+                            INSERT INTO contas_pagar
+                            (descricao, valor, credor, tipo_despesa, data_vencimento, observacoes, status,
+                             tipo_lancamento, recorrencia_id, periodicidade)
+                            VALUES (?, ?, ?, ?, ?, ?, 'pendente', 'recorrente', ?, ?)
+                        ");
+
+                        $stmt->execute([
+                            $descricao, $valor, $credor, $tipo_despesa,
+                            $vencimento, $observacoes, $recorrencia_id, $periodicidade
+                        ]);
+                    }
+
+                    $pdo->commit();
+                    resposta([
+                        'sucesso' => true,
+                        'mensagem' => "$quantidade contas recorrentes criadas com sucesso",
+                        'recorrencia_id' => $recorrencia_id
+                    ], 201);
+
+                } catch (Exception $e) {
+                    $pdo->rollBack();
+                    throw $e;
+                }
+            }
+
+            // INDIVIDUAL
+            else {
+                $stmt = $pdo->prepare("
+                    INSERT INTO contas_pagar
+                    (descricao, valor, credor, tipo_despesa, data_vencimento, observacoes, status, tipo_lancamento)
+                    VALUES (?, ?, ?, ?, ?, ?, 'pendente', 'individual')
+                ");
+
+                $stmt->execute([
+                    $descricao, $valor, $credor, $tipo_despesa,
+                    $data_vencimento, $observacoes
+                ]);
+
+                resposta([
+                    'sucesso' => true,
+                    'mensagem' => 'Conta criada com sucesso',
+                    'id' => $pdo->lastInsertId()
+                ], 201);
+            }
             break;
 
-        // PUT - Atualizar
         case 'PUT':
             $data = json_decode(file_get_contents('php://input'), true);
 
@@ -182,7 +281,7 @@ try {
             }
 
             // Verificar se existe
-            $stmt = $pdo->prepare("SELECT id FROM contas WHERE id = ?");
+            $stmt = $pdo->prepare("SELECT id FROM contas_pagar WHERE id = ?");
             $stmt->execute([$id]);
             if (!$stmt->fetch()) {
                 resposta(['erro' => 'Conta nao encontrada'], 404);
@@ -191,39 +290,13 @@ try {
             $campos = [];
             $params = [];
 
-            if (isset($data['descricao'])) {
-                $campos[] = "descricao = ?";
-                $params[] = $data['descricao'];
-            }
+            $permitidos = ['descricao', 'valor', 'credor', 'tipo_despesa', 'data_vencimento', 'observacoes', 'status'];
 
-            if (isset($data['valor'])) {
-                $campos[] = "valor = ?";
-                $params[] = $data['valor'];
-            }
-
-            if (isset($data['data_vencimento'])) {
-                $campos[] = "data_vencimento = ?";
-                $params[] = $data['data_vencimento'];
-            }
-
-            if (isset($data['data_pagamento'])) {
-                $campos[] = "data_pagamento = ?";
-                $params[] = $data['data_pagamento'];
-            }
-
-            if (isset($data['status'])) {
-                $campos[] = "status = ?";
-                $params[] = $data['status'];
-            }
-
-            if (isset($data['categoria'])) {
-                $campos[] = "categoria = ?";
-                $params[] = $data['categoria'];
-            }
-
-            if (isset($data['observacoes'])) {
-                $campos[] = "observacoes = ?";
-                $params[] = $data['observacoes'];
+            foreach ($permitidos as $campo) {
+                if (isset($data[$campo])) {
+                    $campos[] = "$campo = ?";
+                    $params[] = $data[$campo];
+                }
             }
 
             if (empty($campos)) {
@@ -231,7 +304,7 @@ try {
             }
 
             $params[] = $id;
-            $sql = "UPDATE contas SET " . implode(", ", $campos) . " WHERE id = ?";
+            $sql = "UPDATE contas_pagar SET " . implode(", ", $campos) . " WHERE id = ?";
 
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
@@ -239,13 +312,12 @@ try {
             resposta(['sucesso' => true, 'mensagem' => 'Conta atualizada com sucesso']);
             break;
 
-        // DELETE - Excluir
         case 'DELETE':
             if (!$id) {
                 resposta(['erro' => 'ID nao fornecido'], 400);
             }
 
-            $stmt = $pdo->prepare("DELETE FROM contas WHERE id = ?");
+            $stmt = $pdo->prepare("DELETE FROM contas_pagar WHERE id = ?");
             $stmt->execute([$id]);
 
             if ($stmt->rowCount() > 0) {
