@@ -1,10 +1,10 @@
-// Módulo de Lançamentos
+// Módulo de Lançamentos - Usando API PHP
 
 function renderLancamentoPage() {
     return `
         <h2>Novo Lançamento</h2>
         <div id="alertLancamento"></div>
-        
+
         <form id="formLancamento">
             <div class="form-group">
                 <label>Tipo de Lançamento</label>
@@ -91,7 +91,7 @@ function renderLancamentoPage() {
                 <textarea id="observacoes" rows="3" placeholder="Observações adicionais (opcional)"></textarea>
             </div>
 
-            <button type="submit" class="btn">Salvar Lançamento</button>
+            <button type="submit" class="btn" id="btnSalvar">Salvar Lançamento</button>
         </form>
     `;
 }
@@ -118,10 +118,9 @@ function initLancamentos() {
 async function salvarLancamento(e) {
     e.preventDefault();
 
-    if (!supabase) {
-        mostrarAlerta('alertLancamento', 'Configure o Supabase primeiro na aba Configurações!', 'warning');
-        return;
-    }
+    const btnSalvar = document.getElementById('btnSalvar');
+    btnSalvar.disabled = true;
+    btnSalvar.textContent = 'Salvando...';
 
     const tipoLancamento = document.querySelector('input[name="tipoLancamento"]:checked').value;
     const descricao = document.getElementById('descricao').value;
@@ -129,7 +128,7 @@ async function salvarLancamento(e) {
     const credor = document.getElementById('credor').value;
     const tipoDespesa = document.getElementById('tipoDespesa').value;
     const dataVencimento = document.getElementById('dataVencimento').value;
-    const observacoes = document.getElementById('observacoes').value;
+    const observacoes = document.getElementById('observacoes').value || null;
 
     try {
         if (tipoLancamento === 'individual') {
@@ -144,40 +143,48 @@ async function salvarLancamento(e) {
     } catch (error) {
         console.error('Erro ao salvar:', error);
         mostrarAlerta('alertLancamento', 'Erro ao salvar: ' + error.message, 'danger');
+    } finally {
+        btnSalvar.disabled = false;
+        btnSalvar.textContent = 'Salvar Lançamento';
     }
 }
 
 async function salvarContaIndividual(descricao, valor, credor, tipoDespesa, dataVencimento, observacoes) {
-    const { data, error } = await supabase
-        .from('contas_pagar')
-        .insert([{
-            descricao,
-            valor,
-            credor,
-            tipo_despesa: tipoDespesa,
-            data_vencimento: dataVencimento,
-            observacoes,
-            tipo_lancamento: 'individual',
-            status: 'pendente'
-        }]);
+    const dados = {
+        descricao,
+        valor,
+        credor,
+        tipo_despesa: tipoDespesa,
+        data_vencimento: dataVencimento,
+        observacoes,
+        tipo_lancamento: 'individual',
+        status: 'pendente'
+    };
 
-    if (error) throw error;
+    const response = await api.criarConta(dados);
+
+    if (!response.success) {
+        throw new Error(response.message || 'Erro ao criar conta');
+    }
+
+    return response;
 }
 
 async function salvarContaRecorrente(descricao, valor, credor, tipoDespesa, dataVencimento, observacoes) {
     const tipoRecorrencia = document.querySelector('input[name="tipoRecorrencia"]:checked').value;
     const periodicidade = document.getElementById('periodicidade').value;
     const numParcelas = tipoRecorrencia === 'parcelas' ? parseInt(document.getElementById('numParcelas').value) : null;
-    
-    const recorrenciaId = crypto.randomUUID();
+
+    // Gera ID único para o grupo de recorrências
+    const recorrenciaId = generateUUID();
     const contas = [];
-    
-    const dataBase = new Date(dataVencimento);
-    const totalParcelas = numParcelas || 999;
+
+    const dataBase = new Date(dataVencimento + 'T00:00:00');
+    const totalParcelas = numParcelas || 12; // Se indefinido, cria 12 parcelas iniciais
 
     for (let i = 1; i <= totalParcelas; i++) {
         const dataVenc = new Date(dataBase);
-        
+
         switch(periodicidade) {
             case 'semanal':
                 dataVenc.setDate(dataVenc.getDate() + (7 * (i - 1)));
@@ -195,25 +202,47 @@ async function salvarContaRecorrente(descricao, valor, credor, tipoDespesa, data
 
         contas.push({
             descricao: `${descricao} ${numParcelas ? `(${i}/${numParcelas})` : `(#${i})`}`,
-            valor,
-            credor,
+            valor: valor,
+            credor: credor,
             tipo_despesa: tipoDespesa,
-            data_vencimento: dataVenc.toISOString().split('T')[0],
-            observacoes,
+            data_vencimento: formatarDataISO(dataVenc),
+            observacoes: observacoes,
             tipo_lancamento: 'recorrente',
             recorrencia_id: recorrenciaId,
             parcela_atual: i,
             total_parcelas: numParcelas,
-            periodicidade,
+            periodicidade: periodicidade,
             status: 'pendente'
         });
-
-        if (!numParcelas && i >= 12) break;
     }
 
-    const { data, error } = await supabase
-        .from('contas_pagar')
-        .insert(contas);
+    // Cria todas as contas
+    const response = await api.criarContasRecorrentes(contas);
 
-    if (error) throw error;
+    if (response.some(r => !r.success)) {
+        throw new Error('Erro ao criar algumas contas recorrentes');
+    }
+
+    return response;
+}
+
+// Função auxiliar para gerar UUID
+function generateUUID() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    // Fallback para navegadores antigos
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+// Função auxiliar para formatar data no formato ISO (YYYY-MM-DD)
+function formatarDataISO(data) {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
 }
