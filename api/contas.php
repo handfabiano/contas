@@ -95,10 +95,9 @@ try {
             $totalResult = $db->queryOne($sqlCount, $params);
             $total = $totalResult['total'] ?? 0;
 
-            // Adiciona limit e offset
-            $sql .= " LIMIT ? OFFSET ?";
-            $params[] = $limit;
-            $params[] = $offset;
+            // Adiciona limit e offset (IMPORTANTE: não usar ? para LIMIT/OFFSET no PDO MySQL)
+            // Valores já foram validados como inteiros acima
+            $sql .= " LIMIT " . intval($limit) . " OFFSET " . intval($offset);
 
             $contas = $db->query($sql, $params);
 
