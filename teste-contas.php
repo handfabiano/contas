@@ -38,8 +38,9 @@ try {
     $filtros = [];
     $filtros['limit'] = 1;
 
-    $sql = "SELECT * FROM contas_pagar ORDER BY data_vencimento ASC LIMIT ?";
-    $params = [1];
+    // IMPORTANTE: PDO MySQL não aceita ? para LIMIT/OFFSET
+    $sql = "SELECT * FROM contas_pagar ORDER BY data_vencimento ASC LIMIT 1";
+    $params = [];
 
     echo "<p>SQL: $sql</p>";
     echo "<p>Executando query...</p>";
