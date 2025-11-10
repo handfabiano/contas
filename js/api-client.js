@@ -6,8 +6,20 @@
 class APIClient {
     constructor() {
         // Detecta automaticamente o base URL
-        this.baseURL = window.location.origin + '/api';
+        const path = window.location.pathname;
+        const dir = path.substring(0, path.lastIndexOf('/'));
+
+        // Se está em subdiretório, adiciona ao caminho
+        if (dir && dir !== '/') {
+            this.baseURL = window.location.origin + dir + '/api';
+        } else {
+            this.baseURL = window.location.origin + '/api';
+        }
+
         this.timeout = 30000; // 30 segundos
+
+        // Debug: mostra URL base no console
+        console.log('🔗 API Base URL:', this.baseURL);
     }
 
     /**
@@ -31,6 +43,8 @@ class APIClient {
         }
 
         try {
+            console.log('📡 Requisição:', method || 'GET', url);
+
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
@@ -41,13 +55,29 @@ class APIClient {
 
             clearTimeout(timeoutId);
 
+            console.log('📥 Resposta:', response.status, response.statusText);
+
+            // Pega o texto bruto primeiro
+            const textData = await response.text();
+            console.log('📄 Resposta bruta (primeiros 200 chars):', textData.substring(0, 200));
+
             // Tenta parsear JSON
             let data;
             const contentType = response.headers.get('content-type');
+
             if (contentType && contentType.includes('application/json')) {
-                data = await response.json();
+                try {
+                    data = JSON.parse(textData);
+                } catch (e) {
+                    console.error('❌ Erro ao parsear JSON:', e);
+                    console.error('📄 Resposta completa:', textData);
+                    throw new Error('API retornou resposta inválida. Verifique o console para detalhes.');
+                }
             } else {
-                data = await response.text();
+                // Se não for JSON, mostra o HTML/texto retornado
+                console.error('⚠️ API não retornou JSON! Content-Type:', contentType);
+                console.error('📄 Conteúdo:', textData);
+                throw new Error('API retornou ' + contentType + ' ao invés de JSON. Verifique o console.');
             }
 
             // Verifica se houve erro HTTP
@@ -61,6 +91,7 @@ class APIClient {
             if (error.name === 'AbortError') {
                 throw new Error('Requisição timeout - verifique sua conexão');
             }
+            console.error('❌ Erro na requisição:', error);
             throw error;
         }
     }
