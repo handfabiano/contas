@@ -787,3 +787,21 @@ html {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* ============================================
+   ENTRADA x SAÍDA / FUNDOS (Prestação de Contas)
+   ============================================ */
+
+.info-text {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 6px 0 12px;
+    line-height: 1.4;
+}
+
+.lancamento-tipo {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #f7f7fb;
+    border-radius: 8px;
+}

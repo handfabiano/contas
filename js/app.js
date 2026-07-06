@@ -3,6 +3,7 @@
 const pages = {
     lancamento: renderLancamentoPage,
     contas: renderContasPage,
+    fundos: renderFundosPage,
     relatorios: renderRelatoriosPage,
     config: renderConfigPage
 };
@@ -10,6 +11,7 @@ const pages = {
 const pageInits = {
     lancamento: initLancamentos,
     contas: initContas,
+    fundos: initFundos,
     relatorios: initRelatorios,
     config: () => {} // Sem configuração necessária
 };

@@ -1,9 +1,12 @@
 // Módulo de Contas
 
+// Mapa id -> descrição do fundo (para exibir a que fundo cada saída pertence)
+let fundosMap = {};
+
 function renderContasPage() {
     return `
         <h2>Minhas Contas a Pagar</h2>
-        
+
         <div class="filtros">
             <h3>Filtros</h3>
             <div class="filtros-group">
@@ -14,6 +17,12 @@ function renderContasPage() {
                         <option value="pendente">Pendente</option>
                         <option value="pago">Pago</option>
                         <option value="atrasado">Atrasado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filtroFundo">Fundo</label>
+                    <select id="filtroFundo" onchange="carregarContas()">
+                        <option value="">Todos</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -44,7 +53,26 @@ function renderContasPage() {
 
 function initContas() {
     setMesAtual();
+    carregarFundosFiltro();
     carregarContas();
+}
+
+async function carregarFundosFiltro() {
+    try {
+        const response = await api.listarFundos();
+        const fundos = (response.success && response.data && response.data.fundos) ? response.data.fundos : [];
+
+        fundosMap = {};
+        fundos.forEach(f => { fundosMap[f.id] = f.descricao; });
+
+        const select = document.getElementById('filtroFundo');
+        if (select) {
+            select.innerHTML = '<option value="">Todos</option>' +
+                fundos.map(f => `<option value="${f.id}">${f.descricao}</option>`).join('');
+        }
+    } catch (error) {
+        console.error('Erro ao carregar fundos para filtro:', error);
+    }
 }
 
 async function carregarContas() {
@@ -61,10 +89,12 @@ async function carregarContas() {
         const filtroStatus = document.getElementById('filtroStatus')?.value;
         const filtroTipo = document.getElementById('filtroTipo')?.value;
         const filtroMes = document.getElementById('filtroMes')?.value;
+        const filtroFundo = document.getElementById('filtroFundo')?.value;
 
         if (filtroStatus) filtros.status = filtroStatus;
         if (filtroTipo) filtros.tipo_despesa = filtroTipo;
         if (filtroMes) filtros.mes = filtroMes;
+        if (filtroFundo) filtros.fundo_id = filtroFundo;
 
         // Busca contas da API
         const response = await api.listarContas(filtros);
@@ -103,6 +133,7 @@ function renderizarConta(conta) {
             </div>
             <span class="status-badge ${statusClass}">${status.toUpperCase()}</span>
             <div class="conta-info">
+                <div class="conta-info-item"><strong>Fundo:</strong> ${conta.fundo_id && fundosMap[conta.fundo_id] ? fundosMap[conta.fundo_id] : '—'}</div>
                 <div class="conta-info-item"><strong>Credor:</strong> ${conta.credor}</div>
                 <div class="conta-info-item"><strong>Tipo:</strong> ${formatarTipoDespesa(conta.tipo_despesa)}</div>
                 <div class="conta-info-item"><strong>Vencimento:</strong> ${formatarData(conta.data_vencimento)}</div>

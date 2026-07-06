@@ -11,13 +11,38 @@ CREATE DATABASE IF NOT EXISTS sistema_financeiro
 USE sistema_financeiro;
 
 -- ============================================
--- TABELA: contas_pagar
+-- TABELA: fundos (entradas / caixas)
 -- ============================================
+-- Cada registro é uma ENTRADA de dinheiro e, ao mesmo tempo, uma
+-- prestação de contas própria. As saídas (contas_pagar) são vinculadas
+-- a um fundo via `fundo_id`.
 
 DROP TABLE IF EXISTS contas_pagar;
+DROP TABLE IF EXISTS fundos;
+
+CREATE TABLE fundos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    descricao VARCHAR(255) NOT NULL,
+    fonte VARCHAR(255) NOT NULL,
+    valor_entrada DECIMAL(10,2) NOT NULL,
+    data_entrada DATE NOT NULL,
+    categoria VARCHAR(50) NULL,
+    observacoes TEXT NULL,
+    status ENUM('aberto', 'encerrado') DEFAULT 'aberto',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX idx_fundos_data_entrada (data_entrada),
+    INDEX idx_fundos_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABELA: contas_pagar (saídas)
+-- ============================================
 
 CREATE TABLE contas_pagar (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    fundo_id INT NULL,
     descricao VARCHAR(255) NOT NULL,
     valor DECIMAL(10,2) NOT NULL,
     credor VARCHAR(255) NOT NULL,
@@ -46,7 +71,10 @@ CREATE TABLE contas_pagar (
     INDEX idx_data_vencimento (data_vencimento),
     INDEX idx_tipo_despesa (tipo_despesa),
     INDEX idx_recorrencia (recorrencia_id),
-    INDEX idx_created_at (created_at)
+    INDEX idx_created_at (created_at),
+    INDEX idx_contas_fundo (fundo_id),
+    CONSTRAINT fk_contas_fundo
+        FOREIGN KEY (fundo_id) REFERENCES fundos(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
