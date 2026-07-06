@@ -64,6 +64,12 @@ try {
                 $params[] = $_GET['tipo_despesa'];
             }
 
+            // Filtro por fundo
+            if (!empty($_GET['fundo_id'])) {
+                $sql .= " AND fundo_id = ?";
+                $params[] = $_GET['fundo_id'];
+            }
+
             // Filtro por mês/ano
             if (!empty($_GET['mes'])) {
                 $sql .= " AND DATE_FORMAT(data_vencimento, '%Y-%m') = ?";
@@ -127,12 +133,25 @@ try {
             }
         }
 
+        // Toda saída deve estar vinculada a um fundo (de qual dinheiro sai)
+        $fundoId = filter_var($input['fundo_id'] ?? null, FILTER_VALIDATE_INT);
+        if (!$fundoId) {
+            $errors['fundo_id'] = "Selecione o fundo de onde sai o dinheiro";
+        }
+
         if (!empty($errors)) {
             Response::validationError($errors);
         }
 
+        // Confere se o fundo existe
+        $fundoExiste = $db->queryOne("SELECT id FROM fundos WHERE id = ?", [$fundoId]);
+        if (!$fundoExiste) {
+            Response::validationError(['fundo_id' => 'Fundo não encontrado']);
+        }
+
         // Preparar dados
         $data = [
+            'fundo_id' => $fundoId,
             'descricao' => trim($input['descricao']),
             'valor' => floatval($input['valor']),
             'credor' => trim($input['credor']),
@@ -148,12 +167,13 @@ try {
         ];
 
         $sql = "INSERT INTO contas_pagar (
-            descricao, valor, credor, tipo_despesa, data_vencimento,
+            fundo_id, descricao, valor, credor, tipo_despesa, data_vencimento,
             observacoes, status, tipo_lancamento, recorrencia_id,
             parcela_atual, total_parcelas, periodicidade, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
         $params = [
+            $data['fundo_id'],
             $data['descricao'],
             $data['valor'],
             $data['credor'],
@@ -198,7 +218,7 @@ try {
 
         // Campos permitidos para atualização
         $allowed = [
-            'descricao', 'valor', 'credor', 'tipo_despesa', 'data_vencimento',
+            'fundo_id', 'descricao', 'valor', 'credor', 'tipo_despesa', 'data_vencimento',
             'observacoes', 'status', 'parcela_atual', 'total_parcelas'
         ];
 

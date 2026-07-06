@@ -1,11 +1,73 @@
-// Módulo de Lançamentos - Usando API PHP
+// Módulo de Lançamentos - Entrada (Fundo) x Saída (Despesa)
+
+// Cache dos fundos carregados (para mostrar saldo disponível na saída)
+let fundosCache = [];
 
 function renderLancamentoPage() {
     return `
         <h2>Novo Lançamento</h2>
         <div id="alertLancamento"></div>
 
-        <form id="formLancamento">
+        <div class="lancamento-tipo">
+            <div class="radio-group">
+                <div class="radio-option">
+                    <input type="radio" id="lancEntrada" name="direcao" value="entrada" checked>
+                    <label for="lancEntrada">⬆️ Entrada (recebi dinheiro)</label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" id="lancSaida" name="direcao" value="saida">
+                    <label for="lancSaida">⬇️ Saída (paguei / vou pagar)</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ENTRADA: cria um Fundo / Caixa -->
+        <form id="formEntrada">
+            <p class="info-text">Cada entrada cria um <strong>Fundo / Caixa</strong> com prestação de contas própria. As saídas são abatidas do dinheiro deste fundo.</p>
+
+            <div class="form-group">
+                <label for="entradaDescricao">Descrição *</label>
+                <input type="text" id="entradaDescricao" required placeholder="Ex: Doação festa junina, Verba do projeto X">
+            </div>
+
+            <div class="form-group">
+                <label for="entradaFonte">Fonte (de quem veio) *</label>
+                <input type="text" id="entradaFonte" required placeholder="Ex: Prefeitura, Rifa, Doador João">
+            </div>
+
+            <div class="form-group">
+                <label for="entradaValor">Valor Recebido (R$) *</label>
+                <input type="number" id="entradaValor" step="0.01" min="0" required placeholder="0.00">
+            </div>
+
+            <div class="form-group">
+                <label for="entradaData">Data da Entrada *</label>
+                <input type="date" id="entradaData" required>
+            </div>
+
+            <div class="form-group">
+                <label for="entradaCategoria">Categoria</label>
+                <input type="text" id="entradaCategoria" placeholder="Opcional (ex: Doação, Evento, Venda)">
+            </div>
+
+            <div class="form-group">
+                <label for="entradaObservacoes">Observações</label>
+                <textarea id="entradaObservacoes" rows="3" placeholder="Observações adicionais (opcional)"></textarea>
+            </div>
+
+            <button type="submit" class="btn" id="btnSalvarEntrada">Registrar Entrada</button>
+        </form>
+
+        <!-- SAÍDA: despesa vinculada a um fundo -->
+        <form id="formSaida" class="hidden">
+            <div class="form-group">
+                <label for="saidaFundo">Fundo (de qual dinheiro sai?) *</label>
+                <select id="saidaFundo" required>
+                    <option value="">Carregando fundos...</option>
+                </select>
+                <p class="info-text" id="saidaSaldoInfo"></p>
+            </div>
+
             <div class="form-group">
                 <label>Tipo de Lançamento</label>
                 <div class="radio-group">
@@ -91,32 +153,141 @@ function renderLancamentoPage() {
                 <textarea id="observacoes" rows="3" placeholder="Observações adicionais (opcional)"></textarea>
             </div>
 
-            <button type="submit" class="btn" id="btnSalvar">Salvar Lançamento</button>
+            <button type="submit" class="btn" id="btnSalvar">Salvar Saída</button>
         </form>
     `;
 }
 
 function initLancamentos() {
+    // Alternância Entrada x Saída
+    document.querySelectorAll('input[name="direcao"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const isEntrada = this.value === 'entrada';
+            document.getElementById('formEntrada').classList.toggle('hidden', !isEntrada);
+            document.getElementById('formSaida').classList.toggle('hidden', isEntrada);
+        });
+    });
+
+    // Recorrência
     document.querySelectorAll('input[name="tipoLancamento"]').forEach(radio => {
         radio.addEventListener('change', function() {
-            const recorrenteOptions = document.getElementById('recorrenteOptions');
-            recorrenteOptions.classList.toggle('hidden', this.value === 'individual');
+            document.getElementById('recorrenteOptions').classList.toggle('hidden', this.value === 'individual');
         });
     });
 
     document.querySelectorAll('input[name="tipoRecorrencia"]').forEach(radio => {
         radio.addEventListener('change', function() {
-            const numParcelasGroup = document.getElementById('numParcelasGroup');
-            numParcelasGroup.classList.toggle('hidden', this.value === 'indefinido');
+            document.getElementById('numParcelasGroup').classList.toggle('hidden', this.value === 'indefinido');
         });
     });
 
-    document.getElementById('formLancamento').addEventListener('submit', salvarLancamento);
+    // Mostra saldo do fundo selecionado
+    document.getElementById('saidaFundo').addEventListener('change', atualizarSaldoInfo);
+
+    document.getElementById('formEntrada').addEventListener('submit', salvarEntrada);
+    document.getElementById('formSaida').addEventListener('submit', salvarLancamento);
+
+    // Datas iniciais
+    const hoje = new Date().toISOString().split('T')[0];
+    const entradaData = document.getElementById('entradaData');
+    if (entradaData) entradaData.value = hoje;
     setDataAtual();
+
+    carregarFundosSelect();
+}
+
+// ============================================
+// ENTRADA (Fundo)
+// ============================================
+
+async function salvarEntrada(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('btnSalvarEntrada');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    const dados = {
+        descricao: document.getElementById('entradaDescricao').value,
+        fonte: document.getElementById('entradaFonte').value,
+        valor_entrada: parseFloat(document.getElementById('entradaValor').value),
+        data_entrada: document.getElementById('entradaData').value,
+        categoria: document.getElementById('entradaCategoria').value || null,
+        observacoes: document.getElementById('entradaObservacoes').value || null
+    };
+
+    try {
+        const response = await api.criarFundo(dados);
+        if (!response.success) {
+            throw new Error(response.message || 'Erro ao registrar entrada');
+        }
+
+        mostrarAlerta('alertLancamento', 'Entrada registrada! Um novo fundo foi criado. ✅', 'success');
+        document.getElementById('formEntrada').reset();
+        document.getElementById('entradaData').value = new Date().toISOString().split('T')[0];
+
+        // Atualiza o select de fundos para uso imediato nas saídas
+        carregarFundosSelect();
+    } catch (error) {
+        console.error('Erro ao registrar entrada:', error);
+        mostrarAlerta('alertLancamento', 'Erro ao registrar entrada: ' + error.message, 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Registrar Entrada';
+    }
+}
+
+// ============================================
+// SAÍDA (Despesa vinculada a um fundo)
+// ============================================
+
+async function carregarFundosSelect() {
+    const select = document.getElementById('saidaFundo');
+    if (!select) return;
+
+    try {
+        const response = await api.listarFundos();
+        const fundos = (response.success && response.data && response.data.fundos) ? response.data.fundos : [];
+        fundosCache = fundos;
+
+        if (fundos.length === 0) {
+            select.innerHTML = '<option value="">Nenhum fundo — registre uma entrada primeiro</option>';
+        } else {
+            select.innerHTML = '<option value="">Selecione o fundo...</option>' +
+                fundos.map(f =>
+                    `<option value="${f.id}">${f.descricao} (saldo R$ ${formatarValor(f.saldo)})</option>`
+                ).join('');
+        }
+        atualizarSaldoInfo();
+    } catch (error) {
+        console.error('Erro ao carregar fundos:', error);
+        select.innerHTML = '<option value="">Erro ao carregar fundos</option>';
+    }
+}
+
+function atualizarSaldoInfo() {
+    const info = document.getElementById('saidaSaldoInfo');
+    const select = document.getElementById('saidaFundo');
+    if (!info || !select) return;
+
+    const fundo = fundosCache.find(f => String(f.id) === select.value);
+    if (!fundo) {
+        info.textContent = '';
+        return;
+    }
+
+    const saldo = parseFloat(fundo.saldo);
+    info.innerHTML = `Saldo disponível neste fundo: <strong style="color:${saldo < 0 ? '#d63447' : '#00a86b'}">R$ ${formatarValor(saldo)}</strong>`;
 }
 
 async function salvarLancamento(e) {
     e.preventDefault();
+
+    const fundoId = document.getElementById('saidaFundo').value;
+    if (!fundoId) {
+        mostrarAlerta('alertLancamento', 'Selecione o fundo de onde sai o dinheiro.', 'warning');
+        return;
+    }
 
     const btnSalvar = document.getElementById('btnSalvar');
     btnSalvar.disabled = true;
@@ -130,27 +301,41 @@ async function salvarLancamento(e) {
     const dataVencimento = document.getElementById('dataVencimento').value;
     const observacoes = document.getElementById('observacoes').value || null;
 
+    // Aviso suave se a saída for maior que o saldo disponível (não bloqueia)
+    const fundo = fundosCache.find(f => String(f.id) === fundoId);
+    if (fundo && valor > parseFloat(fundo.saldo)) {
+        const ok = confirm(`Atenção: esta saída (R$ ${formatarValor(valor)}) é maior que o saldo disponível do fundo (R$ ${formatarValor(fundo.saldo)}). O saldo ficará negativo. Deseja continuar?`);
+        if (!ok) {
+            btnSalvar.disabled = false;
+            btnSalvar.textContent = 'Salvar Saída';
+            return;
+        }
+    }
+
     try {
         if (tipoLancamento === 'individual') {
-            await salvarContaIndividual(descricao, valor, credor, tipoDespesa, dataVencimento, observacoes);
+            await salvarContaIndividual(fundoId, descricao, valor, credor, tipoDespesa, dataVencimento, observacoes);
         } else {
-            await salvarContaRecorrente(descricao, valor, credor, tipoDespesa, dataVencimento, observacoes);
+            await salvarContaRecorrente(fundoId, descricao, valor, credor, tipoDespesa, dataVencimento, observacoes);
         }
 
-        mostrarAlerta('alertLancamento', 'Lançamento salvo com sucesso! ✅', 'success');
-        document.getElementById('formLancamento').reset();
+        mostrarAlerta('alertLancamento', 'Saída salva com sucesso! ✅', 'success');
+        document.getElementById('formSaida').reset();
         setDataAtual();
+        // Recarrega fundos para refletir o novo saldo
+        carregarFundosSelect();
     } catch (error) {
         console.error('Erro ao salvar:', error);
         mostrarAlerta('alertLancamento', 'Erro ao salvar: ' + error.message, 'danger');
     } finally {
         btnSalvar.disabled = false;
-        btnSalvar.textContent = 'Salvar Lançamento';
+        btnSalvar.textContent = 'Salvar Saída';
     }
 }
 
-async function salvarContaIndividual(descricao, valor, credor, tipoDespesa, dataVencimento, observacoes) {
+async function salvarContaIndividual(fundoId, descricao, valor, credor, tipoDespesa, dataVencimento, observacoes) {
     const dados = {
+        fundo_id: parseInt(fundoId),
         descricao,
         valor,
         credor,
@@ -170,7 +355,7 @@ async function salvarContaIndividual(descricao, valor, credor, tipoDespesa, data
     return response;
 }
 
-async function salvarContaRecorrente(descricao, valor, credor, tipoDespesa, dataVencimento, observacoes) {
+async function salvarContaRecorrente(fundoId, descricao, valor, credor, tipoDespesa, dataVencimento, observacoes) {
     const tipoRecorrencia = document.querySelector('input[name="tipoRecorrencia"]:checked').value;
     const periodicidade = document.getElementById('periodicidade').value;
     const numParcelas = tipoRecorrencia === 'parcelas' ? parseInt(document.getElementById('numParcelas').value) : null;
@@ -201,6 +386,7 @@ async function salvarContaRecorrente(descricao, valor, credor, tipoDespesa, data
         }
 
         contas.push({
+            fundo_id: parseInt(fundoId),
             descricao: `${descricao} ${numParcelas ? `(${i}/${numParcelas})` : `(#${i})`}`,
             valor: valor,
             credor: credor,

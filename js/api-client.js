@@ -43,7 +43,7 @@ class APIClient {
         }
 
         try {
-            console.log('📡 Requisição:', method || 'GET', url);
+            console.log('📡 Requisição:', config.method || 'GET', url);
 
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), this.timeout);
@@ -197,6 +197,45 @@ class APIClient {
      */
     async excluirConta(id) {
         return this.delete(`contas.php?id=${id}`);
+    }
+
+    // ============================================
+    // FUNDOS (Entradas / Prestação de Contas)
+    // ============================================
+
+    /**
+     * Fundos - Listar (com total gasto e saldo)
+     */
+    async listarFundos(filtros = {}) {
+        return this.get('fundos.php', filtros);
+    }
+
+    /**
+     * Fundos - Prestação de contas de um fundo (agregados + saídas)
+     */
+    async buscarFundo(id) {
+        return this.get('fundos.php', { id });
+    }
+
+    /**
+     * Fundos - Criar (registrar entrada)
+     */
+    async criarFundo(dados) {
+        return this.post('fundos.php', dados);
+    }
+
+    /**
+     * Fundos - Atualizar
+     */
+    async atualizarFundo(id, dados) {
+        return this.put(`fundos.php?id=${id}`, dados);
+    }
+
+    /**
+     * Fundos - Excluir
+     */
+    async excluirFundo(id) {
+        return this.delete(`fundos.php?id=${id}`);
     }
 
     /**
