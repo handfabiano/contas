@@ -16,10 +16,16 @@ const pageInits = {
     config: () => {} // Sem configuração necessária
 };
 
-document.addEventListener('DOMContentLoaded', function() {
+let appIniciado = false;
+
+// Chamado pelo js/auth.js assim que houver uma sessão autenticada
+function iniciarApp() {
+    if (appIniciado) return;
+    appIniciado = true;
+
     loadPage('lancamento');
     registerServiceWorker();
-});
+}
 
 function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
@@ -63,17 +69,21 @@ function renderConfigPage() {
 
         <div class="config-section">
             <h3>Status da Conexão</h3>
-            <p>Teste a conexão com o backend PHP/MySQL:</p>
-            <button class="btn btn-success" onclick="testarConexaoAPI()">Testar Conexão API</button>
+            <p>Teste a conexão com o Supabase:</p>
+            <button class="btn btn-success" onclick="testarConexaoAPI()">Testar Conexão</button>
             <div id="statusConexao" style="margin-top:15px;"></div>
         </div>
 
         <div class="config-section">
             <h3>Sobre o Sistema</h3>
-            <p><strong>Versão:</strong> 2.0.0 (MySQL + Mobile-First)</p>
-            <p><strong>Backend:</strong> PHP + MySQL</p>
+            <p><strong>Versão:</strong> 3.0.0 (Supabase + Mobile-First)</p>
+            <p><strong>Backend:</strong> Supabase (Postgres)</p>
             <p><strong>Frontend:</strong> PWA (Progressive Web App)</p>
-            <p><strong>Última atualização:</strong> Novembro 2025</p>
+        </div>
+
+        <div class="config-section">
+            <h3>Conta</h3>
+            <button class="btn btn-danger" onclick="sair()">Sair</button>
         </div>
 
         <div class="config-section">
@@ -87,15 +97,6 @@ function renderConfigPage() {
             </ul>
         </div>
 
-        <div class="config-section">
-            <h3>Instruções</h3>
-            <ol>
-                <li>Configure o banco MySQL executando <code>setup-mysql.sql</code></li>
-                <li>Edite as credenciais em <code>/api/config.php</code></li>
-                <li>Acesse o sistema e comece a usar!</li>
-                <li>Consulte o <code>README.md</code> para mais informações</li>
-            </ol>
-        </div>
     `;
 }
 
